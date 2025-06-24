@@ -1,0 +1,10 @@
+flask
+beautifulsoup4
+requests
+pdfplumber
+python-docx
+lxml[html_clean]
+tqdm
+transformers
+torch
+accelerate
