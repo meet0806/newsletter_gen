@@ -1,6 +1,6 @@
 # Newsletter Generator
 
-This project generates professional email-style newsletters from blog/article URLs or uploaded documents (PDF/DOCX) using local AI models.
+This project generates professional email-style newsletters from blog/article URLs or uploaded documents (PDF/DOCX) using AI models.
 
 ## Features
 - Extracts content from blog/article URLs or uploaded PDF/DOCX files
