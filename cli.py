@@ -69,7 +69,7 @@ def extract_text_from_url(url):
             text = '\n'.join(lines)
             
             print(f"Extracted {len(text)} characters of content")
-            print(text)
+            # print(text)
             return text
         else:
             print("No content found on the page")
@@ -93,17 +93,17 @@ def extract_text_from_pdf(filepath):
         print(f"Error extracting text from PDF: {e}")
         return None
 
-def extract_text_from_docx(filepath):
-    """Extract text from DOCX file"""
-    try:
-        print(f"Extracting text from DOCX: {filepath}")
-        doc = docx.Document(filepath)
-        paras = list(doc.paragraphs)
-        text = '\n'.join([para.text for para in tqdm(paras, desc="Extracting DOCX paragraphs", unit="para")])
-        return text
-    except Exception as e:
-        print(f"Error extracting text from DOCX: {e}")
-        return None
+# def extract_text_from_docx(filepath):
+#     """Extract text from DOCX file"""
+#     try:
+#         print(f"Extracting text from DOCX: {filepath}")
+#         doc = docx.Document(filepath)
+#         paras = list(doc.paragraphs)
+#         text = '\n'.join([para.text for para in tqdm(paras, desc="Extracting DOCX paragraphs", unit="para")])
+#         return text
+#     except Exception as e:
+#         print(f"Error extracting text from DOCX: {e}")
+#         return None
 
 def generate_newsletter_hf(content, model_name="gpt2", audience="business", api_token=None):
     try:
