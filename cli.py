@@ -69,7 +69,7 @@ def extract_text_from_url(url):
             text = '\n'.join(lines)
             
             print(f"Extracted {len(text)} characters of content")
-            # print(text)
+            print(text)
             return text
         else:
             print("No content found on the page")
@@ -115,17 +115,17 @@ def generate_newsletter_hf(content, model_name="gpt2", audience="business", api_
         )
         # Generate title using the local model
         title_prompt = (
-            f"Write a catchy newsletter headline in one line based on this below article:\n"
-            f"{content[:3500]}\n"
+            f"Article: {content[:1000]}\n\n"
+            f"Headline: "
         )
-        title_result = generator(title_prompt, max_new_tokens=16, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
+        title_result = generator(title_prompt, max_new_tokens=20, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
         title = title_result[0]['generated_text'][len(title_prompt):].replace('\n', ' ').strip()
         # Generate short introduction using the local model
         intro_prompt = (
-            f"Write a short, engaging introduction (2-3 sentences) for a newsletter for a {audience} audience. "
-            f"Here is the article:\n{content[:3500]}\n"
+            f"Article: {content[:1000]}\n\n"
+            f"Introduction: This article covers "
         )
-        intro_result = generator(intro_prompt, max_new_tokens=80, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
+        intro_result = generator(intro_prompt, max_new_tokens=100, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
         introduction = intro_result[0]['generated_text'][len(intro_prompt):].replace('\n', ' ').strip()
         # Split content into 3 roughly equal parts for sections
         content_lines = [line for line in content.split('\n') if line.strip()]
@@ -138,23 +138,45 @@ def generate_newsletter_hf(content, model_name="gpt2", audience="business", api_
         sections = []
         for i, chunk in enumerate(tqdm(section_chunks, desc="Generating sections", unit="section")):
             section_prompt = (
-                f"Write a detailed, informative newsletter section for a {audience} audience. "
-                f"Here is the relevant content:\n{chunk[:800]}\n"
+                f"Content: {chunk[:500]}\n\n"
+                f"Section {i+1}: "
             )
-            section_result = generator(section_prompt, max_new_tokens=180, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
+            section_result = generator(section_prompt, max_new_tokens=200, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
             section_text = section_result[0]['generated_text'][len(section_prompt):].replace('\n', ' ').strip()
             sections.append(section_text)
         # Prompt for CTA
         cta_prompt = (
-            f"Write a compelling call to action for a newsletter for a {audience} audience. "
-            f"Here is the article title: {title}\n"
+            f"Title: {title}\n\n"
+            f"Call to Action: "
         )
-        cta_result = generator(cta_prompt, max_new_tokens=40, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
+        cta_result = generator(cta_prompt, max_new_tokens=50, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
         cta = cta_result[0]['generated_text'][len(cta_prompt):].replace('\n', ' ').strip()
-        # Fallback if any part is missing
-        if not title or not introduction or not any(sections):
-            print("Local model generation didn't produce structured content, using fallback...")
-            return create_fallback_newsletter(content)
+        
+        # Clean up generated content - remove any remaining prompt text
+        title = title.split('\n')[0].strip() if title else ""
+        introduction = introduction.split('\n')[0].strip() if introduction else ""
+        sections = [section.split('\n')[0].strip() for section in sections if section and section.strip()]
+        cta = cta.split('\n')[0].strip() if cta else ""
+        
+        # Check if any part is missing and raise error
+        missing_parts = []
+        if not title or len(title.strip()) < 5:
+            missing_parts.append("title")
+        if not introduction or len(introduction.strip()) < 10:
+            missing_parts.append("introduction")
+        if not sections or len(sections) < 1:
+            missing_parts.append("sections")
+        elif not any(len(section.strip()) > 20 for section in sections):
+            missing_parts.append("valid sections")
+            
+        if missing_parts:
+            print(f"DEBUG - Generated content:")
+            print(f"Title: '{title}' (length: {len(title) if title else 0})")
+            print(f"Introduction: '{introduction}' (length: {len(introduction) if introduction else 0})")
+            print(f"Sections: {len(sections)} sections")
+            for i, section in enumerate(sections):
+                print(f"  Section {i+1}: '{section[:100]}...' (length: {len(section) if section else 0})")
+            raise Exception(f"Local model generation failed to produce: {', '.join(missing_parts)}")
         return {
             "headline": title,
             "introduction": introduction,
@@ -163,8 +185,7 @@ def generate_newsletter_hf(content, model_name="gpt2", audience="business", api_
         }
     except Exception as e:
         print(f"Error with local model: {e}")
-        print("Using fallback newsletter generation...")
-        return create_fallback_newsletter(content)
+        raise
 
 def generate_newsletter(content, model_name="gpt2", audience="business", api_token=None):
     if not content or len(content.strip()) < 50:
@@ -211,12 +232,12 @@ def interactive_mode():
     print("\nAvailable models:")
     print("1. gpt2 (default, fast)")
     print("2. distilgpt2 (faster)")
-    print("3. microsoft/DialoGPT-medium (better quality)")
+    print("3. EleutherAI/gpt-neo-125M (better quality)")
     model_choice = input("Choose model (1-3, default 1): ").strip() or "1"
     model_map = {
         "1": "gpt2",
         "2": "distilgpt2", 
-        "3": "microsoft/DialoGPT-medium"
+        "3": "EleutherAI/gpt-neo-125M"
     }
     model_name = model_map.get(model_choice, "gpt2")
     print("\nAudience options:")
@@ -282,7 +303,7 @@ def main():
     parser.add_argument('--output', '-o', default='newsletter.json', help='Output file (default: newsletter.json)')
     parser.add_argument('--interactive', '-i', action='store_true', help='Run in interactive mode')
     parser.add_argument('--extract-only', action='store_true', help='Only extract content, skip API generation')
-    parser.add_argument('--model', default='gpt2', help='Local model name (suggestions: gpt2, distilgpt2, microsoft/DialoGPT-medium)')
+    parser.add_argument('--model', default='gpt2', help='Local model name (examples: gpt2, distilgpt2, EleutherAI/gpt-neo-125M)')
     parser.add_argument('--audience', default='business', choices=['business', 'technical'], help='Audience type: business or technical (default: business)')
     parser.add_argument('--api-token', help='Local model API token')
     
@@ -461,62 +482,6 @@ Content: {content[:2000]}
     output = llm(prompt, max_tokens=512, stop=["</s>"])
     # Parse output as needed
     return {"raw_output": output["choices"][0]["text"]}
-
-def create_fallback_newsletter(content):
-    """Create a basic newsletter structure when local model generation fails, with only 2-3 sections."""
-    # Extract title from content if available
-    title = ""
-    if content.startswith("Title: "):
-        title_line = content.split('\n')[0]
-        title = title_line.replace("Title: ", "").strip()
-        content = '\n'.join(content.split('\n')[2:])
-    if not title:
-        title = "Newsletter"
-    # Extract summary if available
-    summary = ""
-    if content.startswith("Summary: "):
-        summary_line = content.split('\n')[0]
-        summary = summary_line.replace("Summary: ", "").strip()
-        content = '\n'.join(content.split('\n')[2:])
-    if summary:
-        introduction = f"{summary} This article provides comprehensive coverage of the topic with detailed analysis and insights that are relevant to our readers."
-    else:
-        introduction = "This article covers important developments and provides valuable insights on current events and trends that are relevant to our audience."
-    # Create sections from content with more detail
-    paragraphs = [p.strip() for p in content.split('\n\n') if len(p.strip()) > 80]
-    # If not enough paragraphs, split by sentences
-    if len(paragraphs) < 2:
-        sentences = [s.strip() for s in content.split('.') if len(s.strip()) > 60]
-        # Group sentences into sections
-        sections = []
-        current_section = ""
-        for sentence in sentences:
-            if len(current_section) < 200:
-                current_section += " " + sentence if current_section else sentence
-            else:
-                if current_section:
-                    sections.append(current_section.strip())
-                current_section = sentence
-        if current_section:
-            sections.append(current_section.strip())
-        # Ensure we have at least 2 sections
-        while len(sections) < 2 and sentences:
-            remaining_sentences = [s for s in sentences if s not in ' '.join(sections)]
-            if remaining_sentences:
-                sections.append(remaining_sentences[0])
-            else:
-                break
-    else:
-        sections = paragraphs[:3]
-    # Always limit to 2-3 sections
-    sections = sections[:3]
-    cta = "Read the full article for comprehensive details and stay informed about the latest developments in this important story."
-    return {
-        "headline": title,
-        "introduction": introduction,
-        "sections": sections,
-        "cta": cta
-    }
 
 if __name__ == '__main__':
     main() 
