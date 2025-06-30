@@ -70,3 +70,7 @@ coverage.xml
 newsletter.json
 *.pdf
 uploads/
+
+# Frontend
+frontend/node_modules/
+
