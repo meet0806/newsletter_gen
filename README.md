@@ -1,82 +1,145 @@
 # Newsletter Generator
 
-This project generates professional email-style newsletters from blog/article URLs or uploaded documents (PDF/DOCX) using AI models.
+A professional newsletter generator that creates newsletters from URLs or documents using AI models. The application consists of a Flask backend API and a React frontend.
 
 ## Features
-- Extracts content from blog/article URLs or uploaded PDF/DOCX files
-- Summarizes and structures content into a newsletter (headline, intro, 2–3 sections, CTA)
-- Uses local Hugging Face models (no API costs or rate limits)
-- **Multi-prompt approach** for better content generation
-- **Natural, instruction-like prompts** for higher quality output (no underscores)
-- Returns output in JSON format
-- **NEW**: CLI tool for easy command-line usage
 
-## Setup
-1. Clone the repository or copy the files to your project directory.
-2. Create and activate a Python virtual environment:
-   ```sh
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```sh
+- Generate newsletters from URLs or uploaded files (PDF/DOCX)
+- Multiple AI model options (GPT-2, DistilGPT-2, GPT-Neo)
+- Support for different audience types (Business, Technical)
+- Beautiful React UI with drag-and-drop file upload
+- Download generated newsletters as JSON or copy to clipboard
+- Real-time content extraction from web pages
+
+## Project Structure
+
+```
+take_home_asses/
+├── app.py                 # Flask backend API
+├── cli.py                 # Original CLI version
+├── requirements.txt       # Python dependencies
+├── frontend/             # React frontend
+│   ├── package.json
+│   ├── public/
+│   └── src/
+│       ├── components/
+│       │   ├── UrlForm.js
+│       │   ├── FileUpload.js
+│       │   └── NewsletterDisplay.js
+│       ├── App.js
+│       ├── index.js
+│       └── index.css
+└── uploads/              # Temporary file upload directory
+```
+
+## Setup Instructions
+
+### Backend Setup (Flask)
+
+1. **Install Python dependencies:**
+   ```bash
    pip install -r requirements.txt
    ```
 
+2. **Run the Flask backend:**
+   ```bash
+   python app.py
+   ```
+   
+   The backend will start on `http://localhost:5000`
+
+### Frontend Setup (React)
+
+1. **Navigate to the frontend directory:**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install Node.js dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Start the React development server:**
+   ```bash
+   npm start
+   ```
+   
+   The frontend will start on `http://localhost:3000`
+
+### Production Build
+
+To build the React app for production:
+
+```bash
+cd frontend
+npm run build
+```
+
+The built files will be in `frontend/build/` and can be served by the Flask backend.
+
+## API Endpoints
+
+- `POST /api/generate-from-url` - Generate newsletter from URL
+- `POST /api/generate-from-file` - Generate newsletter from uploaded file
+- `GET /api/models` - Get available AI models
+- `GET /api/audiences` - Get available audience types
+
 ## Usage
 
-### CLI Tool (Recommended)
+1. Open the application in your browser
+2. Choose between generating from URL or uploading a file
+3. Select your preferred AI model and target audience
+4. Enter the URL or upload a PDF/DOCX file
+5. Click "Generate Newsletter" and wait for the AI to process
+6. View, copy, or download the generated newsletter
 
-#### Interactive Mode
-```sh
-python cli.py --interactive
-```
-This will start an interactive menu where you can:
-- Choose to generate from URL or file
-- Select from different AI models
-- Enter URLs or file paths
-- Save results to files
+## Supported File Types
 
-#### Command Line Mode
-```sh
-# Generate from URL (uses gpt2 by default)
-python cli.py --url "https://example.com/article" --output my_newsletter.json
+- **PDF files** (.pdf)
+- **Microsoft Word documents** (.docx)
+- **Web URLs** (any accessible webpage)
 
-# Use a different model
-python cli.py --url "https://example.com/article" --model "distilgpt2"
+## AI Models
 
-# Generate from PDF file
-python cli.py --file document.pdf --output my_newsletter.json
+- **GPT-2** (default, fast) - Good balance of speed and quality
+- **DistilGPT-2** (faster) - Optimized for speed
+- **GPT-Neo 125M** (better quality) - Enhanced output quality
+- **Microsoft Phi-3 Mini** (high quality) - Advanced instruction-following model
 
-# Generate from DOCX file
-python cli.py --file document.docx --output my_newsletter.json
+## Dependencies
 
-# Extract content only (no AI generation)
-python cli.py --file document.pdf --extract-only
-```
+### Backend
+- Flask
+- Flask-CORS
+- BeautifulSoup4
+- Requests
+- PDFPlumber
+- Python-docx
+- Transformers
+- Torch
+- Accelerate
 
-#### Available Models
-- `gpt2` (default) - Good balance of speed and quality
-- `distilgpt2` - Faster, smaller model
-- `microsoft/DialoGPT-medium` - Better quality, slower
+### Frontend
+- React 18
+- Axios
+- React-dropzone
 
-#### CLI Help
-```sh
-python cli.py --help
-```
+## Development
 
-## Example Output
-```json
-{
-  "headline": "Article Title",
-  "introduction": "Summary of the content...",
-  "sections": ["Section 1...", "Section 2...", "Section 3..."],
-  "cta": "Call to action..."
-}
-```
+The application is designed with a clean separation between frontend and backend:
 
-## Notes
-- Only PDF and DOCX files are supported for uploads.
-- Uses local Hugging Face models - no API costs or rate limits.
-- The CLI tool is easier to use for testing and quick generation.
-- Models are downloaded automatically on first use. 
+- **Backend**: Flask API with CORS enabled for cross-origin requests
+- **Frontend**: React app with modern UI components
+- **Communication**: RESTful API calls between frontend and backend
+
+## Troubleshooting
+
+1. **Port conflicts**: Make sure ports 3000 (React) and 5000 (Flask) are available
+2. **File upload issues**: Check that the `uploads/` directory exists and is writable
+3. **Model loading**: First run may take longer as AI models are downloaded
+4. **CORS issues**: Ensure Flask-CORS is properly installed and configured
+
+## License
+
+This project is for educational and demonstration purposes.

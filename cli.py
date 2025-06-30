@@ -116,7 +116,7 @@ def generate_newsletter_hf(content, model_name="gpt2", audience="business", api_
         # Generate title using the local model
         title_prompt = (
             f"Article: {content[:1000]}\n\n"
-            f"Headline: "
+            f"Based on the given content give 4-9 words of Headline for newsletter: "
         )
         title_result = generator(title_prompt, max_new_tokens=20, num_return_sequences=1, temperature=0.8, do_sample=True, truncation=True, pad_token_id=generator.tokenizer.eos_token_id, repetition_penalty=1.1, top_p=0.9, top_k=50)
         title = title_result[0]['generated_text'][len(title_prompt):].replace('\n', ' ').strip()
